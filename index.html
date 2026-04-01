@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BE-TECH Lab — Member Directory</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f5f7fa;color:#1C2833}
+.header{background:linear-gradient(135deg,#1B4F72 0%,#2E86C1 50%,#0F6E56 100%);color:#fff;padding:28px 32px 22px;position:relative;overflow:hidden}
+.header::after{content:'';position:absolute;top:-30px;right:-20px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.06)}
+.header h1{font-size:26px;font-weight:700;letter-spacing:-.5px;position:relative}
+.header .sub{font-size:14px;opacity:.85;margin-top:4px;position:relative}
+.header .eut{font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:4px;position:relative}
+.header .stats{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;position:relative}
+.header .stat{font-size:11px;padding:3px 10px;border-radius:6px;background:rgba(255,255,255,.18)}
+.header .stat.total{background:rgba(255,255,255,.28);font-weight:600}
+.container{max-width:1000px;margin:0 auto;padding:16px 20px}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 18px;border-radius:8px;border:1.5px solid #ddd;background:#fff;color:#555;font-size:13px;font-weight:400;cursor:pointer;transition:.15s}
+.tab.active{border-color:#1B4F72;background:#D6EAF8;color:#1B4F72;font-weight:600}
+.tab:hover{border-color:#85C1E9}
+.register-btn{margin-left:auto;padding:8px 18px;border-radius:8px;border:none;background:#D85A30;color:#fff;font-weight:600;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block}
+.register-btn:hover{background:#c04a22}
+.filters{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.filters input,.filters select{padding:8px 12px;border-radius:8px;border:1.5px solid #ddd;font-size:13px;font-family:inherit}
+.filters input{flex:1;min-width:200px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.card{background:#fff;border-radius:10px;border:1.5px solid #eee;padding:16px;cursor:pointer;transition:.15s}
+.card:hover{box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.card .top{display:flex;justify-content:space-between;align-items:flex-start}
+.card .name{font-weight:600;font-size:14px}
+.card .disc{font-size:12px;color:#888;margin-top:2px}
+.card .uni{font-size:10px;padding:3px 8px;border-radius:5px;background:#D6EAF8;color:#1B4F72;font-weight:600}
+.card .meta{font-size:11px;color:#999;margin-top:3px}
+.card .arenas{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.arena-tag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600}
+.a1{background:#E1F5EE;color:#0F6E56}.a2{background:#D6EAF8;color:#1B4F72}.a3{background:#EEEDFE;color:#534AB7}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:#fff;border-radius:14px;padding:28px;max-width:560px;width:90%;max-height:80vh;overflow-y:auto}
+.modal .mname{font-size:20px;font-weight:700;color:#1B4F72}
+.modal .minfo{font-size:13px;color:#666;margin-top:2px}
+.modal .close{background:none;border:none;font-size:22px;cursor:pointer;color:#999;float:right}
+.modal .label{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:1px;margin:12px 0 5px}
+.modal .txt{font-size:13px;color:#444;line-height:1.6;margin-bottom:8px;white-space:pre-wrap}
+.modal .collab{color:#D85A30;font-weight:500}
+.skill-tag{font-size:10px;padding:2px 7px;border-radius:4px;background:#D6EAF8;color:#1B4F72;font-weight:500;display:inline-block;margin:2px}
+.dash-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.dash-card{background:#fff;border-radius:10px;padding:16px;border:1.5px solid #eee;text-align:center}
+.dash-card .val{font-size:28px;font-weight:700}
+.dash-card .lbl{font-size:12px;color:#888;margin-top:2px}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.dash-panel{background:#fff;border-radius:12px;padding:18px;border:1.5px solid #eee}
+.dash-panel h3{font-size:14px;font-weight:600;color:#1B4F72;margin-bottom:12px}
+.bar-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:12px}
+.bar-row .v{font-weight:600;color:#1B4F72}
+.empty{text-align:center;padding:60px 20px;color:#888;background:#fafafa;border-radius:12px}
+.loading{text-align:center;padding:60px;color:#888}
+@media(max-width:700px){.dash-cards{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.filters{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     CONFIGURATION: Replace the URL below with your published
+     Google Sheet CSV URL (File > Share > Publish to web > CSV)
+     ============================================================ -->
+<script>
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMUIXmvx3kr3E8rMdvYp9uzw-swlDUipVLk-O8ulaHDXAdhM_IrqWvwkcVbRWH1YDAMl4BSyr_htfs/pub?output=csv';
+
+// Google Form URL — replace with your form link
+const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfgPEdf_maDQ6bHD1nZZNcfMwUo7Rx4Ro1DDoD5WQOAkXf-pw/viewform?usp=publish-editor';
+</script>
+
+<div class="header">
+  <div class="eut">EUt+ European Research Group</div>
+  <h1>BE-TECH Lab</h1>
+  <div class="sub">Competence mapping & collaboration finder</div>
+  <div class="stats" id="headerStats"></div>
+</div>
+
+<div class="container">
+  <div class="tabs" id="tabs">
+    <button class="tab active" onclick="switchTab('directory')">Directory</button>
+    <button class="tab" onclick="switchTab('dashboard')">Dashboard</button>
+    <a class="register-btn" id="registerBtn" href="#" target="_blank">+ Register your profile</a>
+  </div>
+
+  <div id="directory">
+    <div class="filters">
+      <input type="text" id="searchInput" placeholder="Search by name, discipline, or keyword..." oninput="render()">
+      <select id="arenaFilter" onchange="render()">
+        <option value="">All arenas</option>
+        <option value="Arena 1">Arena 1 — Business & innovation</option>
+        <option value="Arena 2">Arena 2 — Economy & society</option>
+        <option value="Arena 3">Arena 3 — Governance & digital futures</option>
+      </select>
+      <select id="uniFilter" onchange="render()"></select>
+    </div>
+    <div id="memberGrid" class="grid"></div>
+  </div>
+
+  <div id="dashboard" style="display:none"></div>
+</div>
+
+<div id="modalContainer"></div>
+
+<script>
+let members = [];
+const ARENA_LABELS = {
+  'Arena 1': 'Business & Innovation', 'Arena 2': 'Economy & Society', 'Arena 3': 'Governance & Digital Futures'
+};
+const ARENA_CLASSES = { 'Arena 1': 'a1', 'Arena 2': 'a2', 'Arena 3': 'a3' };
+const ARENA_COLORS = { 'Arena 1': '#0F6E56', 'Arena 2': '#1B4F72', 'Arena 3': '#534AB7' };
+
+document.getElementById('registerBtn').href = FORM_URL;
+
+function parseCSV(text) {
+  const lines = []; let current = ''; let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') { inQuotes = !inQuotes; current += c; }
+    else if (c === '\n' && !inQuotes) { lines.push(current); current = ''; }
+    else { current += c; }
+  }
+  if (current.trim()) lines.push(current);
+
+  return lines.map(line => {
+    const cells = []; let cell = ''; let q = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { q = !q; }
+      else if (c === ',' && !q) { cells.push(cell.trim()); cell = ''; }
+      else { cell += c; }
+    }
+    cells.push(cell.trim());
+    return cells;
+  });
+}
+
+async function loadData() {
+  document.getElementById('memberGrid').innerHTML = '<div class="loading">Loading member data...</div>';
+  try {
+    const resp = await fetch(SHEET_URL);
+    const text = await resp.text();
+    const rows = parseCSV(text);
+    if (rows.length < 2) { document.getElementById('memberGrid').innerHTML = '<div class="empty"><b>No members yet</b><br>Be the first to register!</div>'; return; }
+    const header = rows[0];
+    members = rows.slice(1).filter(r => r[1] && r[1].trim()).map(r => ({
+      timestamp: r[0] || '',
+      name: r[1] || '',
+      email: r[2] || '',
+      university: r[3] || '',
+      discipline: r[4] || '',
+      careerStage: r[5] || '',
+      membership: r[6] || 'Core',
+      arenas: (r[7] || '').split(';').map(s => s.trim()).filter(Boolean),
+      skills: (r[8] || '').split(';').map(s => s.trim()).filter(Boolean),
+      researchAgenda: r[9] || '',
+      publications: r[10] || '',
+      seekingCollab: r[11] || '',
+      orcid: r[12] || '',
+      linkedIn: r[13] || ''
+    }));
+    populateFilters();
+    render();
+    updateStats();
+  } catch (e) {
+    document.getElementById('memberGrid').innerHTML = '<div class="empty"><b>Could not load data</b><br>Please check that the Google Sheet URL is configured correctly.</div>';
+  }
+}
+
+function uniShort(u) { const m = u.match(/\(([^)]+)\)/); return m ? m[1] : u; }
+
+function populateFilters() {
+  const unis = [...new Set(members.map(m => m.university))].filter(Boolean).sort();
+  const sel = document.getElementById('uniFilter');
+  sel.innerHTML = '<option value="">All universities</option>' + unis.map(u => `<option value="${u}">${uniShort(u)}</option>`).join('');
+}
+
+function getFiltered() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const a = document.getElementById('arenaFilter').value;
+  const u = document.getElementById('uniFilter').value;
+  return members.filter(m => {
+    if (q && ![m.name, m.discipline, m.researchAgenda, m.seekingCollab, m.skills.join(' ')].some(s => s.toLowerCase().includes(q))) return false;
+    if (a && !m.arenas.some(ar => ar.includes(a))) return false;
+    if (u && m.university !== u) return false;
+    return true;
+  });
+}
+
+function arenaKey(a) { if (a.includes('1') || a.toLowerCase().includes('business')) return 'Arena 1'; if (a.includes('2') || a.toLowerCase().includes('economy')) return 'Arena 2'; if (a.includes('3') || a.toLowerCase().includes('governance')) return 'Arena 3'; return ''; }
+
+function render() {
+  const f = getFiltered();
+  const grid = document.getElementById('memberGrid');
+  if (f.length === 0) { grid.innerHTML = '<div class="empty"><b>No members found</b><br>Try adjusting your filters</div>'; return; }
+  grid.innerHTML = f.map((m, i) => `
+    <div class="card" onclick="showModal(${i})">
+      <div class="top">
+        <div><div class="name">${esc(m.name)}</div><div class="disc">${esc(m.discipline)}</div></div>
+        <span class="uni">${esc(uniShort(m.university))}</span>
+      </div>
+      <div class="meta">${esc(m.careerStage)}${m.membership ? ' · ' + esc(m.membership) : ''}</div>
+      <div class="arenas">${m.arenas.map(a => { const k = arenaKey(a); return `<span class="arena-tag ${ARENA_CLASSES[k] || 'a1'}">${ARENA_LABELS[k] || esc(a)}</span>`; }).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function showModal(idx) {
+  const f = getFiltered();
+  const m = f[idx];
+  document.getElementById('modalContainer').innerHTML = `
+    <div class="modal-bg" onclick="closeModal()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <button class="close" onclick="closeModal()">&times;</button>
+        <div class="mname">${esc(m.name)}</div>
+        <div class="minfo">${esc(m.discipline)} · ${esc(m.careerStage)} · ${esc(uniShort(m.university))} · ${esc(m.membership)}</div>
+        ${m.email ? `<div style="font-size:13px;color:#555;margin-top:10px">Email: <a href="mailto:${esc(m.email)}" style="color:#1B4F72">${esc(m.email)}</a></div>` : ''}
+        ${m.orcid ? `<div style="font-size:13px;color:#555;margin-top:3px">ORCID: ${esc(m.orcid)}</div>` : ''}
+        ${m.linkedIn ? `<div style="font-size:13px;color:#555;margin-top:3px">LinkedIn: <a href="${esc(m.linkedIn)}" target="_blank" style="color:#1B4F72">${esc(m.linkedIn)}</a></div>` : ''}
+        <div class="label">Arenas</div>
+        <div>${m.arenas.map(a => { const k = arenaKey(a); return `<span class="arena-tag ${ARENA_CLASSES[k] || 'a1'}" style="font-size:11px;padding:3px 8px">${ARENA_LABELS[k] || esc(a)}</span>`; }).join(' ')}</div>
+        ${m.skills.length ? `<div class="label">Skills & topics</div><div>${m.skills.map(s => `<span class="skill-tag">${esc(s)}</span>`).join(' ')}</div>` : ''}
+        ${m.researchAgenda ? `<div class="label">Research agenda</div><div class="txt">${esc(m.researchAgenda)}</div>` : ''}
+        ${m.publications ? `<div class="label">Recent publications</div><div class="txt">${esc(m.publications)}</div>` : ''}
+        ${m.seekingCollab ? `<div class="label">Seeking collaboration on</div><div class="txt collab">${esc(m.seekingCollab)}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function closeModal() { document.getElementById('modalContainer').innerHTML = ''; }
+
+function updateStats() {
+  const s = document.getElementById('headerStats');
+  const a1 = members.filter(m => m.arenas.some(a => arenaKey(a) === 'Arena 1')).length;
+  const a2 = members.filter(m => m.arenas.some(a => arenaKey(a) === 'Arena 2')).length;
+  const a3 = members.filter(m => m.arenas.some(a => arenaKey(a) === 'Arena 3')).length;
+  s.innerHTML = `
+    <span class="stat">Business & Innovation: ${a1}</span>
+    <span class="stat">Economy & Society: ${a2}</span>
+    <span class="stat">Governance & Digital Futures: ${a3}</span>
+    <span class="stat total">Total: ${members.length}</span>`;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('directory').style.display = tab === 'directory' ? '' : 'none';
+  document.getElementById('dashboard').style.display = tab === 'dashboard' ? '' : 'none';
+  if (tab === 'dashboard') renderDashboard();
+}
+
+function renderDashboard() {
+  const unis = {};
+  members.forEach(m => { const u = uniShort(m.university); unis[u] = (unis[u] || 0) + 1; });
+  const a1 = members.filter(m => m.arenas.some(a => arenaKey(a) === 'Arena 1')).length;
+  const a2 = members.filter(m => m.arenas.some(a => arenaKey(a) === 'Arena 2')).length;
+  const a3 = members.filter(m => m.arenas.some(a => arenaKey(a) === 'Arena 3')).length;
+  const skillCount = {};
+  members.forEach(m => m.skills.forEach(s => { skillCount[s] = (skillCount[s] || 0) + 1; }));
+  const topSkills = Object.entries(skillCount).sort((a, b) => b[1] - a[1]);
+
+  document.getElementById('dashboard').innerHTML = `
+    <div class="dash-cards">
+      <div class="dash-card"><div class="val" style="color:#0F6E56">${a1}</div><div class="lbl">Business & Innovation</div></div>
+      <div class="dash-card"><div class="val" style="color:#1B4F72">${a2}</div><div class="lbl">Economy & Society</div></div>
+      <div class="dash-card"><div class="val" style="color:#534AB7">${a3}</div><div class="lbl">Governance & Digital Futures</div></div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-panel">
+        <h3>Members by university</h3>
+        ${Object.entries(unis).sort((a,b) => b[1]-a[1]).map(([u,c]) => `<div class="bar-row"><span>${u}</span><span class="v">${c}</span></div>`).join('')}
+      </div>
+      <div class="dash-panel">
+        <h3>Top skills & topics</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          ${topSkills.map(([s,c]) => `<span class="skill-tag" style="${c > 2 ? 'font-weight:600' : ''}">${esc(s)} (${c})</span>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+loadData();
+</script>
+</body>
+</html>
